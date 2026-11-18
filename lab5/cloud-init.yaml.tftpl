@@ -1,0 +1,17 @@
+#cloud-config
+runcmd:
+  - export HOME=/root
+  - curl -fsSL https://get.docker.com | sh
+  - curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+  - |
+    until az login --identity && az acr login --name ${acr_name}
+    do
+      echo "Esperando permiso"; sleep 30
+    done
+  - docker pull mcr.microsoft.com/azuredocs/aci-helloworld
+  - docker tag mcr.microsoft.com/azuredocs/aci-helloworld ${acr_server}/hello-cloud:v1
+  - docker push ${acr_server}/hello-cloud:v1
+  - |
+    docker run -d --name hello-cloud -p 80:80 \
+      --restart unless-stopped \
+      ${acr_server}/hello-cloud:v1
